@@ -6,17 +6,19 @@ import { z } from "zod";
 
 // 1. Zod Schema for Structured Citations
 const SikhAiSchema = z.object({
-  answer: z.string().describe("A helpful, respectful answer based ONLY on the provided Gurbani/History context."),
+  answer: z.string().describe("A helpful, respectful answer. For general greetings like 'hello', reply politely with a Sikh greeting."),
+  // Using .optional() and .default([]) prevents Zod from crashing when no scripture is cited!
   citations: z.array(
     z.object({
-      gurmukhi: z.string().describe("Original Gurmukhi line from Gurbani or text from Itihas"),
+      gurmukhi: z.string().describe("Original Gurmukhi line"),
       english: z.string().describe("English translation"),
-      source: z.string().describe("Source name, e.g., Guru Granth Sahib Ji or Dasam Granth"),
-      author: z.string().describe("Author, e.g., Guru Nanak Dev Ji"),
-      ang: z.number().optional().describe("Ang number if available")
+      source: z.string().describe("Source name"),
+      author: z.string().describe("Author"),
+      ang: z.number().optional()
     })
-  ).describe("Exact scripture references retrieved from the context that support the answer.")
+  ).optional().default([])
 });
+
 
 // Helper: Get embedding vector from Hugging Face (BAAI/bge-m3)
 async function getQueryEmbedding(text: string): Promise<number[]> {
