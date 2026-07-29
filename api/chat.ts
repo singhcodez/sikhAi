@@ -64,9 +64,12 @@ async function generateWithFallback(
 ) {
   // Define fallback sequence (Google AI Studio models)
   // Note: Gemma models are text-only, so we exclude them if an image is attached
-  const models = hasImage
+
+ /* const models = hasImage
     ? ["gemini-1.5-flash", "gemini-1.5-pro"]
-    : ["gemini-1.5-flash", "gemini-1.5-pro", "gemma-2-9b-it","gemma-4-31b","gemma-4-26b"];
+    : ["gemini-3.1-flash", "gemini-3.1-flash-lite", "gemma-2-9b-it","gemma-4-31b","gemma-4-26b"];
+*/
+  const models = ["gemini-3.1-flash", "gemini-3.1-flash-lite", "gemma-2-9b-it","gemma-4-31b","gemma-4-26b"];
 
   let lastError: any = null;
 
