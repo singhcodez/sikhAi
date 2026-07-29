@@ -29,16 +29,16 @@ export function useChat() {
       setMessages((prev) => [...prev, botMsg]);
     } catch (err: any) {
       setError(err.message);
+      // SHOW THE REAL ERROR IN THE CHAT BUBBLE!
       const errorMsg: ChatMessage = {
         id: crypto.randomUUID(),
         sender: 'bot',
-        text: "Apologies, I encountered an error. Please try again.",
+        text: `SYSTEM ERROR: ${err.message}. Please check Vercel logs.`, 
       };
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setLoading(false);
-    }
   };
-
+}
   return { messages, loading, error, sendMessage };
 }

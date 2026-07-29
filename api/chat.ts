@@ -30,17 +30,25 @@ async function getQueryEmbedding(text: string): Promise<number[]> {
         "Authorization": `Bearer ${process.env.HF_TOKEN}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ inputs: text, options: { wait_for_model: true } }),
+      // wait_for_model forces it to wait if the model is currently asleep
+      body: JSON.stringify({ inputs: text, options: { wait_for_model: true } }), 
     }
   );
 
-  if (!response.ok) {
-    throw new Error(`HF Embedding failed: ${response.statusText}`);
+  const responseData = await response.json();
+
+  // If HF returns an explicit error (like "Model is loading"), throw it so we see it!
+  if (responseData.error) {
+    throw new Error(`Hugging Face API Error: ${responseData.error}`);
   }
 
-  const embedding = await response.json();
-  return Array.isArray(embedding[0]) ? embedding[0] : embedding;
+  if (!response.ok) {
+    throw new Error(`HF Embedding failed with status: ${response.status} ${response.statusText}`);
+  }
+
+  return Array.isArray(responseData[0]) ? responseData[0] : responseData;
 }
+
 
 // Helper: Search Qdrant Vector Database
 async function searchScriptures(queryVector: number[]) {
