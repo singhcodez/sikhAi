@@ -43,8 +43,8 @@ async function getQueryEmbedding(text: string): Promise<number[]> {
 // Helper: Search Qdrant Vector Database
 async function searchScriptures(queryVector: number[]) {
   const qdrant = new QdrantClient({
-    url: process.env.QDRANT_URL!,
-    apiKey: process.env.QDRANT_API_KEY!,
+    url: process.env.QDRANT_URL,
+    apiKey: process.env.QDRANT_API_KEY,
   });
 
   const searchResults = await qdrant.search("sikh_scriptures", {
