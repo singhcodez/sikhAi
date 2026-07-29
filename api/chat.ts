@@ -20,34 +20,38 @@ const SikhAiSchema = z.object({
 });
 
 
-// Helper: Get embedding vector from Hugging Face (BAAI/bge-m3)
+// Helper: Get embedding vector from Hugging Face's NEW Serverless Router (BAAI/bge-m3)
 async function getQueryEmbedding(text: string): Promise<number[]> {
   const response = await fetch(
-    "https://api-inference.huggingface.co/pipeline/feature-extraction/BAAI/bge-m3",
+    "https://router.huggingface.co/hf-inference/models/BAAI/bge-m3",
     {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.HF_TOKEN}`,
         "Content-Type": "application/json",
       },
-      // wait_for_model forces it to wait if the model is currently asleep
-      body: JSON.stringify({ inputs: text, options: { wait_for_model: true } }), 
+      body: JSON.stringify({ 
+        inputs: text, 
+        options: { wait_for_model: true } 
+      }),
     }
   );
 
   const responseData = await response.json();
 
-  // If HF returns an explicit error (like "Model is loading"), throw it so we see it!
+  // Handle explicit API errors from Hugging Face
   if (responseData.error) {
-    throw new Error(`Hugging Face API Error: ${responseData.error}`);
+    throw new Error(`Hugging Face Model Error: ${responseData.error}`);
   }
 
   if (!response.ok) {
-    throw new Error(`HF Embedding failed with status: ${response.status} ${response.statusText}`);
+    throw new Error(`Hugging Face API failed (${response.status}): ${JSON.stringify(responseData)}`);
   }
 
+  // Ensure we return a flat 1D array of 1024 numbers
   return Array.isArray(responseData[0]) ? responseData[0] : responseData;
 }
+
 
 
 // Helper: Search Qdrant Vector Database
