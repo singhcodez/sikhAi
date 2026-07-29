@@ -20,10 +20,11 @@ const SikhAiSchema = z.object({
 });
 
 
-// Helper: Get embedding vector from Hugging Face's NEW Serverless Router (BAAI/bge-m3)
+// Helper: Get embedding vector from Hugging Face's Feature Extraction Pipeline
 async function getQueryEmbedding(text: string): Promise<number[]> {
   const response = await fetch(
-    "https://router.huggingface.co/hf-inference/models/BAAI/bge-m3",
+    // Notice the added "/pipeline/feature-extraction/" path here!
+    "https://router.huggingface.co/hf-inference/pipeline/feature-extraction/BAAI/bge-m3",
     {
       method: "POST",
       headers: {
@@ -39,7 +40,6 @@ async function getQueryEmbedding(text: string): Promise<number[]> {
 
   const responseData = await response.json();
 
-  // Handle explicit API errors from Hugging Face
   if (responseData.error) {
     throw new Error(`Hugging Face Model Error: ${responseData.error}`);
   }
@@ -48,9 +48,9 @@ async function getQueryEmbedding(text: string): Promise<number[]> {
     throw new Error(`Hugging Face API failed (${response.status}): ${JSON.stringify(responseData)}`);
   }
 
-  // Ensure we return a flat 1D array of 1024 numbers
   return Array.isArray(responseData[0]) ? responseData[0] : responseData;
 }
+
 
 
 
