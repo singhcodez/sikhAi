@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { z } from "zod";
@@ -20,36 +20,16 @@ const SikhAiSchema = z.object({
 });
 
 
-// Helper: Get embedding vector from Hugging Face's Feature Extraction Pipeline
+// Helper: Get embedding vector instantly via Google Gemini (768 dimensions)
 async function getQueryEmbedding(text: string): Promise<number[]> {
-  const response = await fetch(
-    // Notice the added "/pipeline/feature-extraction/" path here!
-    "https://router.huggingface.co/hf-inference/pipeline/feature-extraction/BAAI/bge-m3",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.HF_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        inputs: text, 
-        options: { wait_for_model: true } 
-      }),
-    }
-  );
-
-  const responseData = await response.json();
-
-  if (responseData.error) {
-    throw new Error(`Hugging Face Model Error: ${responseData.error}`);
-  }
-
-  if (!response.ok) {
-    throw new Error(`Hugging Face API failed (${response.status}): ${JSON.stringify(responseData)}`);
-  }
-
-  return Array.isArray(responseData[0]) ? responseData[0] : responseData;
+  const embeddings = new GoogleGenerativeAIEmbeddings({
+    model: "text-embedding-004",
+    apiKey: process.env.GOOGLE_API_KEY,
+  });
+  
+  return await embeddings.embedQuery(text);
 }
+
 
 
 
