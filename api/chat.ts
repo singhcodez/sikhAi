@@ -21,14 +21,34 @@ const SikhAiSchema = z.object({
 
 
 // Helper: Get embedding vector instantly via Google Gemini (768 dimensions)
+// Helper: Get embedding vector instantly via Direct Google REST API
 async function getQueryEmbedding(text: string): Promise<number[]> {
-  const embeddings = new GoogleGenerativeAIEmbeddings({
-    model: "text-embedding-004",
-    apiKey: process.env.GOOGLE_API_KEY,
-  });
+  const apiKey = process.env.GOOGLE_API_KEY;
   
-  return await embeddings.embedQuery(text);
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "models/text-embedding-004",
+        content: {
+          parts: [{ text: text }]
+        }
+      })
+    }
+  );
+
+  const data = await response.json();
+  
+  if (data.error) {
+    throw new Error(`Google API Error: ${data.error.message}`);
+  }
+
+  // Ensure we return the raw array of numbers
+  return data.embedding.values;
 }
+
 
 
 
