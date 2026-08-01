@@ -12,10 +12,10 @@ export interface Citation {
 }
 
 export interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  citations?: Citation[];
+  id?: string;
+  sender: 'user' | 'bot' | 'assistant'; // Supports whatever your useChat hook uses!
+  text: string;
+  citations?: CitationData[];
 }
 
 export type TranslationLanguage = 'english' | 'hindi';
