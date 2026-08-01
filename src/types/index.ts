@@ -1,18 +1,25 @@
 // src/types/index.ts
 
+// src/types/index.ts
+
 export interface Citation {
   gurmukhi: string;
   english: string;
+  hindi?: string;
   source: string;
   author: string;
+  ang?: number;
 }
 
 export interface ChatMessage {
-  id: string; // Add an ID for React keys
-  sender: 'user' | 'bot';
-  text: string;
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
   citations?: Citation[];
 }
+
+export type TranslationLanguage = 'english' | 'hindi';
+
 
 export interface ApiRequest {
   message: string;
