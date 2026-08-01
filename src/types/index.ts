@@ -15,7 +15,7 @@ export interface ChatMessage {
   id?: string;
   sender: 'user' | 'bot' | 'assistant'; // Supports whatever your useChat hook uses!
   text: string;
-  citations?: CitationData[];
+  citations?: Citation[];
 }
 
 export type TranslationLanguage = 'english' | 'hindi';
