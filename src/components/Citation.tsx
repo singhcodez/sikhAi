@@ -1,5 +1,6 @@
 // src/components/Citation.tsx
 import React from 'react';
+import { Language } from '../context/SettingsContext'; 
 
 interface CitationData {
   gurmukhi: string;
@@ -12,7 +13,7 @@ interface CitationData {
 
 interface CitationProps {
   data: CitationData;
-  preferredLanguage: 'english' | 'hindi';
+  preferredLanguage: Language;
 }
 
 export default function Citation({ data, preferredLanguage }: CitationProps) {
