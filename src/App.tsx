@@ -69,7 +69,7 @@ function Navigation() {
   
   return (
     // Note: Removed hardcoded bg-slate-950 to allow Dark/Light mode classes to take over if implemented globally
-    <header className="border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 sticky top-0 z-50 transition-colors duration-200">
+    <header className=" sticky  border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 sticky top-0 z-50 transition-colors duration-200">
       <div className="max-w-3xl mx-auto flex justify-between items-center">
         
         {/* Logo and Subtitle */}
