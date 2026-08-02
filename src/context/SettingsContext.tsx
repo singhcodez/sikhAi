@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 
 // 1. Define Strict Types for Security & Predictability
 export type Theme = 'light' | 'dark';
-export type Language = 'English' | 'Punjabi' | 'Spanish';
+export type Language = 'English' | 'Punjabi' | 'hindi';
 
 interface SettingsState {
   theme: Theme;
