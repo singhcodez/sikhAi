@@ -32,7 +32,7 @@ function ChatInterface() {
       <div className="flex-1 p-4 sm:p-6 space-y-6">
         {messages.length === 0 && (
           <div className="text-center text-slate-500 mt-20">
-            <p>Start a conversation to search scriptures.</p>
+            <p>Start a conversation to search scriptures.(it can make mistakes, so treat it like a child who is constantly learning.)</p>
           </div>
         )}
         
