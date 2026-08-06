@@ -1,7 +1,7 @@
 // src/App.tsx
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { MessageSquare, Info, Settings as SettingsIcon, ShieldCheck } from 'lucide-react'; 
+import { MessageSquare, Info, Settings as SettingsIcon } from 'lucide-react'; 
 
 // Hooks & Context
 import { useChat } from './hooks/useChat';
@@ -12,7 +12,6 @@ import Message from './components/Message';
 import ChatInput from './components/ChatInput';
 import About from './pages/About';
 import Settings from './pages/Settings'; 
-import PrivacyPolicy from './pages/PrivacyPolicy'; // Ensure you have created this page
 
 // ============================================================================
 // 1. CHAT INTERFACE
@@ -57,7 +56,6 @@ function ChatInterface() {
       </div>
 
       {/* STICKY BOTTOM CHAT INPUT */}
-      {/* sticky bottom-0 locks the input to the floor of the scrolling <main> viewport */}
       <div className="sticky bottom-0 z-40 bg-gray-50 dark:bg-slate-900 p-4 sm:px-6 sm:pb-6 border-t border-gray-200 dark:border-slate-800 transition-colors duration-200">
         <ChatInput onSend={sendMessage} loading={loading} />
       </div>
@@ -73,11 +71,8 @@ function Navigation() {
   const isChat = location.pathname === '/';
   const isAbout = location.pathname === '/about';
   const isSettings = location.pathname === '/settings';
-  const isPrivacy = location.pathname === '/privacy';
   
   return (
-    // shrink-0 ensures the header is never squished by flexbox constraints.
-    // sticky top-0 keeps it anchored to the roof of the application.
     <header className="shrink-0 sticky top-0 z-50 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 transition-colors duration-200">
       <div className="max-w-3xl mx-auto flex justify-between items-center">
         
@@ -118,15 +113,6 @@ function Navigation() {
             <SettingsIcon size={14} />
             <span className="hidden sm:inline">Settings</span>
           </Link>
-          <Link 
-            to="/privacy" 
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              isPrivacy ? 'bg-amber-100 text-amber-700 dark:bg-amber-600/20 dark:text-amber-500' : 'text-gray-600 hover:text-amber-600 dark:text-slate-200 dark:hover:text-amber-400'
-            }`}
-          >
-            <ShieldCheck size={14} />
-            <span className="hidden md:inline">Privacy</span>
-          </Link>
         </nav>
 
       </div>
@@ -141,28 +127,15 @@ export default function App() {
   return (
     <SettingsProvider>
       <Router>
-        {/* 
-          1. h-[100dvh] guarantees the app fits exactly within the mobile viewport.
-          2. flex-col sets up the top-to-bottom layout.
-          3. overflow-hidden permanently prevents the outer window from scrolling.
-        */}
         <div className="h-[100dvh] flex flex-col overflow-hidden bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 transition-colors duration-200">
           
-          {/* Sits outside the scrolling area, forever anchored to the top */}
           <Navigation />
           
-          {/* 
-            THE MAGIC CLASS: flex-1 overflow-y-auto scroll-smooth
-            This forces ONLY the middle section to scroll. The chat, settings, 
-            and privacy pages will glide smoothly underneath the Navigation bar.
-          */}
           <main className="flex-1 overflow-y-auto scroll-smooth">
             <Routes>
               <Route path="/" element={<ChatInterface />} />
               <Route path="/about" element={<About />} />
               <Route path="/settings" element={<Settings />} /> 
-              {/* Security Pillar: Linking the Privacy Policy route securely */}
-              <Route path="/privacy" element={<PrivacyPolicy />} /> 
             </Routes>
           </main>
 
