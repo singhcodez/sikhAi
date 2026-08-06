@@ -1,7 +1,6 @@
 // src/App.tsx
 import React, { useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-// Aliased 'Settings' to 'SettingsIcon' to avoid clashing with your page name
 import { MessageSquare, Info, Settings as SettingsIcon } from 'lucide-react'; 
 
 // Hooks & Context
@@ -12,7 +11,7 @@ import { SettingsProvider } from './context/SettingsContext';
 import Message from './components/Message';
 import ChatInput from './components/ChatInput';
 import About from './pages/About';
-import Settings from './pages/Settings'; // Imported your new page
+import Settings from './pages/Settings'; 
 
 // ============================================================================
 // 1. CHAT INTERFACE
@@ -26,8 +25,12 @@ function ChatInterface() {
   }, [messages, loading]);
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-68px)] max-w-3xl mx-auto w-full p-4 sm:p-6">
-      <div className="flex-1 overflow-y-auto py-4 space-y-6 scrollbar-thin scrollbar-thumb-slate-700">
+    // UX Pillar: flex-1 and h-full ensure this component fills the remaining screen space perfectly.
+    <div className="flex-1 flex flex-col w-full max-w-3xl mx-auto h-full">
+      
+      {/* SCROLLING MIDDLE SECTION */}
+      {/* flex-1 overflow-y-auto forces ONLY this box to scroll, leaving the input fixed below it. */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-700">
         {messages.length === 0 && (
           <div className="text-center text-slate-500 mt-20">
             <p>Start a conversation to search scriptures.</p>
@@ -53,13 +56,17 @@ function ChatInterface() {
         <div ref={endOfMessagesRef} />
       </div>
 
-      <ChatInput onSend={sendMessage} loading={loading} />
+      {/* FIXED BOTTOM CHAT INPUT */}
+      {/* Because it sits outside the overflow-y-auto div, it acts as a fixed footer. */}
+      <div className="p-4 sm:px-6 sm:pb-6 pt-2 bg-gray-50 dark:bg-slate-900 transition-colors duration-200">
+        <ChatInput onSend={sendMessage} loading={loading} />
+      </div>
     </div>
   );
 }
 
 // ============================================================================
-// 2. TOP NAVIGATION BAR (Updated with Settings Link)
+// 2. TOP NAVIGATION BAR
 // ============================================================================
 function Navigation() {
   const location = useLocation();
@@ -68,8 +75,8 @@ function Navigation() {
   const isSettings = location.pathname === '/settings';
   
   return (
-    // Note: Removed hardcoded bg-slate-950 to allow Dark/Light mode classes to take over if implemented globally
-    <header className=" sticky  border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 sticky top-0 z-50 transition-colors duration-200">
+    // DRY Code: Cleaned up the duplicate "sticky" class and ensured borders adapt to dark/light mode.
+    <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 transition-colors duration-200">
       <div className="max-w-3xl mx-auto flex justify-between items-center">
         
         {/* Logo and Subtitle */}
@@ -100,7 +107,6 @@ function Navigation() {
             <Info size={14} />
             <span className="hidden sm:inline">About</span>
           </Link>
-          {/* New Settings Link Added */}
           <Link 
             to="/settings" 
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -118,23 +124,28 @@ function Navigation() {
 }
 
 // ============================================================================
-// 3. MAIN APP ROUTER SHELL (Wrapped in SettingsProvider)
+// 3. MAIN APP ROUTER SHELL
 // ============================================================================
 export default function App() {
   return (
-    // DRY Code: Wrapping the router ensures useSettings() works everywhere
     <SettingsProvider>
       <Router>
-        {/* Let Tailwind handle the global background via Light/Dark mode */}
-        <div className="min-h-screen bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 flex flex-col overflow-hidden transition-colors duration-200">
+        {/* 
+          UX Pillar: Using `h-screen` instead of `min-h-screen` guarantees the app 
+          never exceeds the device's visible height, preventing double-scrollbars on mobile browsers.
+        */}
+        <div className="h-screen bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 flex flex-col overflow-hidden transition-colors duration-200">
           
           <Navigation />
           
-          <main className="flex-1 flex flex-col w-full">
+          {/* 
+            flex-1 overflow-hidden ensures the <main> block fills the space between the header 
+            and the bottom of the screen, safely containing the chat UI.
+          */}
+          <main className="flex-1 flex flex-col w-full overflow-hidden">
             <Routes>
               <Route path="/" element={<ChatInterface />} />
               <Route path="/about" element={<About />} />
-              {/* Connected Settings Route */}
               <Route path="/settings" element={<Settings />} /> 
             </Routes>
           </main>
