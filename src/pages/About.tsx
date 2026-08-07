@@ -21,7 +21,7 @@ export default function About() {
           <h2 className="text-xl font-semibold text-white">100% Free & Community Funded</h2>
         </div>
         <p className="text-sm leading-relaxed text-slate-300 mb-4">
-          SikhAI is built as a free educational tool. <bold>it can make mistakes, so treat it like a child who is constantly learning.</bold>
+          SikhAI is built as a free educational tool. <b>it can make mistakes, so treat it like a child who is constantly learning.</b>
           We do not run ads, and we do not sell your data. 
           To keep the AI running for everyone, we rely entirely on community donations to cover our monthly server and API costs.
         </p>
