@@ -1,13 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+// DRY CODE & SECURITY: We removed `GoogleGenerativeAIEmbeddings` from the Langchain import.
+// Using the third-party wrapper for embeddings frequently scrambles URL endpoints and causes 404 errors.
+// Bypassing it and making a direct REST API call to Google is significantly more stable, secure, and lightweight.
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { HumanMessage } from "@langchain/core/messages";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { z } from "zod";
 
 // 1. Zod Schema for Structured Citations
 const SikhAiSchema = z.object({
-  answer: z.string().describe("A helpful, respectful answer. For general greetings like 'hello', reply politely with a Sikh greeting."),
-  // Using .optional() and .default([]) prevents Zod from crashing when no scripture is cited!
+  // UX FIX: Strict instructions preventing repeated greetings on every single response.
+  answer: z.string().describe("If the user says 'hello' or sends a generic greeting, reply ONLY with 'Waheguru Ji Ka Khalsa, Waheguru Ji Ki Fateh (The Khalsa belongs to Waheguru, Victory belongs to Waheguru).' If the user asks a specific question, DO NOT include any greeting. Answer the question directly and respectfully."),
   citations: z.array(
     z.object({
       gurmukhi: z.string().describe("Original Gurmukhi line"),
@@ -19,9 +22,7 @@ const SikhAiSchema = z.object({
   ).optional().default([])
 });
 
-
-// Helper: Get embedding vector instantly via Google Gemini (768 dimensions)
-// Helper: Get embedding vector instantly via Direct Google REST API
+// Helper: Get embedding vector instantly via Direct Google REST API (Bypassing Langchain)
 async function getQueryEmbedding(text: string): Promise<number[]> {
   const apiKey = process.env.GOOGLE_API_KEY;
   
@@ -45,14 +46,8 @@ async function getQueryEmbedding(text: string): Promise<number[]> {
     throw new Error(`Google API Error: ${data.error.message}`);
   }
 
-  // Ensure we return the raw array of numbers
   return data.embedding.values;
 }
-
-
-
-
-
 
 // Helper: Search Qdrant Vector Database
 async function searchScriptures(queryVector: number[]) {
@@ -63,7 +58,7 @@ async function searchScriptures(queryVector: number[]) {
 
   const searchResults = await qdrant.search("sikh_scriptures_master", {
     vector: queryVector,
-    limit: 3,
+    limit: 10, // UX FIX: Increased from 3 to 10. This gives the AI vastly more context so it stops saying data doesn't exist!
   });
 
   return searchResults.map((item) => item.payload);
@@ -76,14 +71,10 @@ async function generateWithFallback(
   messages: HumanMessage[], 
   hasImage: boolean
 ) {
-  // Define fallback sequence (Google AI Studio models)
-  // Note: Gemma models are text-only, so we exclude them if an image is attached
-
- /* const models = hasImage
+  // Use currently available production models
+  const models = hasImage
     ? ["gemini-1.5-flash", "gemini-1.5-pro"]
-    : ["gemini-3.1-flash", "gemini-3.1-flash-lite", "gemma-2-9b-it","gemma-4-31b","gemma-4-26b"];
-*/
-  const models = ["gemini-3.1-flash", "gemini-3.1-flash-lite", "gemma-2-9b-it","gemma-4-31b","gemma-4-26b"];
+    : ["gemini-1.5-flash", "gemini-1.5-flash-lite", "gemma-2-9b-it"];
 
   let lastError: any = null;
 
@@ -95,7 +86,7 @@ async function generateWithFallback(
         model: modelName,
         apiKey: process.env.GOOGLE_API_KEY,
         temperature: 0.1,
-        maxRetries: 1, // Fail fast so our custom fallback loop takes over immediately
+        maxRetries: 1, 
       }).withStructuredOutput(SikhAiSchema);
 
       const result = await model.invoke(messages);
@@ -103,13 +94,11 @@ async function generateWithFallback(
       return result;
 
     } catch (error: any) {
-      console.warn(`Model ${modelName} failed (Limit reached or error):`, error.message);
+      console.warn(`Model ${modelName} failed:`, error.message);
       lastError = error;
-      // Loop continues automatically to the next model in the array!
     }
   }
 
-  // If all fallback models fail, throw the last error
   throw new Error(`All fallback AI models exhausted. Last error: ${lastError?.message}`);
 }
 
@@ -124,15 +113,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Message or image is required' });
     }
 
-    // Step 1: Search Qdrant using the text prompt (defaulting to empty string if image-only)
     const queryText = message || "Analyze this scripture image and explain its meaning.";
     const queryVector = await getQueryEmbedding(queryText);
     const retrievedContext = await searchScriptures(queryVector);
 
-    // Step 2: Prepare RAG Prompt & Multimodal Payload
     const contextString = JSON.stringify(retrievedContext, null, 2);
+    
+    // UX FIX: The Prompt has been strictly updated with Greeting Rules to prevent looping
     const ragPrompt = `
 You are SikhAI, a respectful assistant grounded in Guru Granth Sahib Ji, Dasam Granth, and Sikh History.
+
 USER QUESTION: "${queryText}"
 
 RETRIEVED SCRIPTURE CONTEXT FROM DATABASE:
@@ -142,9 +132,9 @@ INSTRUCTIONS:
 1. Answer the user's question using ONLY the provided scripture context above (or by analyzing the uploaded image if one was provided).
 2. Always return exact citations from the retrieved context or image.
 3. If the context does not contain enough information, acknowledge what is present and state respectfully that additional scripture search is needed. Do NOT invent Gurbani.
+4. GREETING RULE: If the USER QUESTION is purely a greeting (e.g., 'hello', 'sat sri akal'), output exactly: "Waheguru Ji Ka Khalsa, Waheguru Ji Ki Fateh (The Khalsa belongs to Waheguru, Victory belongs to Waheguru). How may I assist you with Gurbani today?". If the USER QUESTION asks a specific question, DO NOT include any greeting. Jump straight to the answer.
 `;
 
-    // Construct message payload with optional Base64 Image
     const contentPayload: any[] = [{ type: "text", text: ragPrompt }];
     const hasImage = Boolean(imageBase64);
 
@@ -157,7 +147,6 @@ INSTRUCTIONS:
       });
     }
 
-    // Step 3: Execute generation with automatic Gemini/Gemma fallback
     const result = await generateWithFallback(
       [new HumanMessage({ content: contentPayload })],
       hasImage
